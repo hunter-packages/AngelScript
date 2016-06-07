@@ -20,11 +20,52 @@
 # THE SOFTWARE.
 #
 
-# Define target name
-set (TARGET_NAME AngelScript)
+cmake_minimum_required(VERSION 3.0)
+
+project(AngelScript VERSION 1.0.0)
+
+set(SOURCE_FILES
+  source/as_atomic.cpp
+  source/as_builder.cpp
+  source/as_bytecode.cpp
+  source/as_callfunc.cpp
+  source/as_callfunc_arm.cpp
+  source/as_callfunc_mips.cpp
+  source/as_callfunc_ppc.cpp
+  source/as_callfunc_ppc_64.cpp
+  source/as_callfunc_sh4.cpp
+  source/as_callfunc_x64_gcc.cpp
+  source/as_callfunc_x64_mingw.cpp
+  source/as_callfunc_x64_msvc.cpp
+  source/as_callfunc_x86.cpp
+  source/as_callfunc_xenon.cpp
+  source/as_compiler.cpp
+  source/as_configgroup.cpp
+  source/as_context.cpp
+  source/as_datatype.cpp
+  source/as_gc.cpp
+  source/as_generic.cpp
+  source/as_globalproperty.cpp
+  source/as_memory.cpp
+  source/as_module.cpp
+  source/as_objecttype.cpp
+  source/as_outputbuffer.cpp
+  source/as_parser.cpp
+  source/as_restore.cpp
+  source/as_scriptcode.cpp
+  source/as_scriptengine.cpp
+  source/as_scriptfunction.cpp
+  source/as_scriptnode.cpp
+  source/as_scriptobject.cpp
+  source/as_string.cpp
+  source/as_string_util.cpp
+  source/as_thread.cpp
+  source/as_tokenizer.cpp
+  source/as_typeinfo.cpp
+  source/as_variablescope.cpp
+  )
 
 # Define source files
-define_source_files (GLOB_CPP_PATTERNS source/*.cpp GLOB_H_PATTERNS include/*.h source/*.h)
 if (IOS OR ANDROID OR RPI)
     enable_language (ASM)
     if (IOS)
@@ -37,16 +78,73 @@ elseif (MSVC AND URHO3D_64BIT)
     # Commented out due to cmake bug - todo: Recheck if this workaround is still necessary when increasing CMake minimum version
     #set (ASM_FILES source/as_callfunc_x64_msvc_asm.asm)
     # As a temporary workaround
-    add_custom_command (OUTPUT as_callfunc_x64_msvc_asm.obj COMMAND ${CMAKE_ASM_MASM_COMPILER} -Fo ${CMAKE_CURRENT_BINARY_DIR}/as_callfunc_x64_msvc_asm.obj -c ${CMAKE_CURRENT_SOURCE_DIR}/source/as_callfunc_x64_msvc_asm.asm DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/as_callfunc_x64_msvc_asm.asm COMMENT "Temporary workaround for MASM")
+    add_custom_command (
+      OUTPUT as_callfunc_x64_msvc_asm.obj
+      COMMAND ${CMAKE_ASM_MASM_COMPILER} -Fo ${CMAKE_CURRENT_BINARY_DIR}/as_callfunc_x64_msvc_asm.obj -c ${CMAKE_CURRENT_SOURCE_DIR}/source/as_callfunc_x64_msvc_asm.asm
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/source/as_callfunc_x64_msvc_asm.asm COMMENT "Temporary workaround for MASM"
+      )
     set (ASM_FILES ${CMAKE_CURRENT_BINARY_DIR}/as_callfunc_x64_msvc_asm.obj ${CMAKE_CURRENT_SOURCE_DIR}/source/as_callfunc_x64_msvc_asm.asm)
 endif ()
 list (APPEND SOURCE_FILES ${ASM_FILES})
 
-# Define dependency libs
-set (INCLUDE_DIRS include)
+add_library(AngelScript "${SOURCE_FILES}")
 
-# Setup target
-setup_library ()
+#### install
 
-# Install headers for building and using the Urho3D library (install dependency for Urho3D/Script/APITemplates.h)
-install_header_files (DIRECTORY include/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/AngelScript FILES_MATCHING PATTERN *.h)     # Note: the trailing slash is significant
+set(TARGET_PUBLIC_HDRS include/angelscript.h)
+
+set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+set(include_install_dir "include")
+
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+# Configuration
+set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+set(targets_export_name "${PROJECT_NAME}Targets")
+set(namespace "${PROJECT_NAME}::")
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+  "${version_config}" COMPATIBILITY SameMajorVersion
+  )
+
+configure_package_config_file(
+  "cmake/Config.cmake.in"
+  "${project_config}"
+  INSTALL_DESTINATION "${config_install_dir}"
+  )
+
+install(
+  TARGETS AngelScript
+  EXPORT "${targets_export_name}"
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+  RUNTIME DESTINATION "bin"
+  INCLUDES DESTINATION "${include_install_dir}"
+  )
+
+foreach(HEADER ${TARGET_PUBLIC_HDRS})
+  install(
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/${HEADER}"
+    DESTINATION "${include_install_dir}/${PROJECT_NAME}"
+    )
+endforeach()
+
+install(
+  DIRECTORY AngelScript # No trailing slash
+  DESTINATION "${include_install_dir}/"
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+  )
+
+install(
+  FILES "${project_config}" "${version_config}"
+  DESTINATION "${config_install_dir}"
+  )
+
+install(
+  EXPORT "${targets_export_name}"
+  NAMESPACE "${namespace}"
+  DESTINATION "${config_install_dir}"
+  )
