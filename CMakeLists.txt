@@ -81,6 +81,9 @@ list (APPEND SOURCE_FILES ${ASM_FILES})
 
 add_library(AngelScript "${SOURCE_FILES}")
 
+find_package(Threads REQUIRED)
+target_link_libraries(AngelScript PUBLIC Threads::Threads)
+
 #### install
 
 set(TARGET_PUBLIC_HDRS include/angelscript.h)
