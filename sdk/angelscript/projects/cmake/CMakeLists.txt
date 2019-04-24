@@ -117,9 +117,9 @@ if(MSVC)
 endif()
 
 if(NOT BUILD_FRAMEWORK)
-    set(ANGELSCRIPT_LIBRARY_NAME angelscript)
+    set(ANGELSCRIPT_LIBRARY_NAME AngelScript)
 else()
-    set(ANGELSCRIPT_LIBRARY_NAME Angelscript) # OS X frameworks should have capitalized name
+    set(ANGELSCRIPT_LIBRARY_NAME AngelScript) # OS X frameworks should have capitalized name
     set(BUILD_SHARED_LIBS TRUE)
 endif()
 set(ANGELSCRIPT_LIBRARY_NAME ${ANGELSCRIPT_LIBRARY_NAME} CACHE STRING "" FORCE)
@@ -178,37 +178,38 @@ install(TARGETS ${ANGELSCRIPT_LIBRARY_NAME} EXPORT AngelscriptTargets
 
 install(FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/../../include/angelscript.h
-	DESTINATION include
+	DESTINATION include/${ANGELSCRIPT_LIBRARY_NAME}
 	COMPONENT Devel
 )
 
+
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"${CMAKE_CURRENT_BINARY_DIR}/Angelscript/AngelscriptConfigVersion.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}ConfigVersion.cmake"
 	VERSION ${PROJECT_VERSION}
 	COMPATIBILITY AnyNewerVersion
 )
 
 export(EXPORT AngelscriptTargets
-	FILE "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/AngelscriptTargets.cmake"
-	NAMESPACE Angelscript::
+	FILE "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}Targets.cmake"
+	NAMESPACE AngelScript::
 )
-configure_file(cmake/AngelscriptConfig.cmake
-	"${CMAKE_CURRENT_BINARY_DIR}/Angelscript/AngelscriptConfig.cmake"
-	COPYONLY
+
+set(TARGETS_EXPORT_NAME "${ANGELSCRIPT_LIBRARY_NAME}Targets")
+configure_package_config_file(
+    cmake/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}Config.cmake"
+    INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}Config.cmake"
 )
 
 set(ConfigPackageLocation lib/cmake/Angelscript)
 install(EXPORT AngelscriptTargets
-	FILE AngelscriptTargets.cmake
-	NAMESPACE Angelscript::
+	FILE ${ANGELSCRIPT_LIBRARY_NAME}Targets.cmake
+	NAMESPACE AngelScript::
 	DESTINATION ${ConfigPackageLocation}
-)
-install(
-	FILES
-		cmake/AngelscriptConfig.cmake
-		"${CMAKE_CURRENT_BINARY_DIR}/Angelscript/AngelscriptConfigVersion.cmake"
-	DESTINATION ${ConfigPackageLocation}
-	COMPONENT Devel
 )
 
+install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}ConfigVersion.cmake" "${CMAKE_CURRENT_BINARY_DIR}/Angelscript/${ANGELSCRIPT_LIBRARY_NAME}Config.cmake"
+    DESTINATION ${ConfigPackageLocation}
+)
